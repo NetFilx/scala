@@ -1,6 +1,10 @@
 package cn.limbo.demo
 
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success}
 
 
 /**
@@ -17,21 +21,21 @@ object HelloWorld {
     /** ********************* 元 组 *********************************/
 
     /** ********************* 字 符 串 *********************************/
-    val c = '杨'
+    val c = '吴'
 
-    val s1 = "重庆誉存企业信用管理有限公司";
+    val s1 = "杭州师范大学";
     println("s1:" + s1)
-    val s2 = s"重庆誉存企业信用管理有限公司${c}经"
+    val s2 = s"杭州师范大学${c}永涵"
 
     println("s2:" + s2);
 
-    val s3 = s"""重庆誉存企业信用管理有限公司"工程师"\n${c}景是江津人"""
+    val s3 = s"""杭州师范大学"工程师"\n${c}永涵是温州人"""
     println("s3:" + s3);
 
     println(raw"a\nb");
 
     val height = 1.9d
-    val name = "James"
+    val name = "Limbo"
     println(f"$name%s is $height%2.2f meters tall")
     /** ********************* 字 符 串 *********************************/
 
@@ -143,25 +147,25 @@ object HelloWorld {
     }
 
     //注意Map转换为Seq的时候一定要显示转换调用.toSeq
-    for{
+    for {
       x <- Seq(nonEmptySeq, emptySeq, nonEmptyList, emptyList,
-          nonEmptyVector, emptyVector, nonEmptyMap.toSeq, emptyMap.toSeq)
-    }{
+        nonEmptyVector, emptyVector, nonEmptyMap.toSeq, emptyMap.toSeq)
+    } {
       println(seqToString(x))
     }
 
     //使用case class
-    val father = Man("father",30)
-    val mather = Woman("mather",29)
-    val son = Boy("son",6)
+    val father = Man("father", 30)
+    val mather = Woman("mather", 29)
+    val son = Boy("son", 6)
 
-    for{
-      person <- Seq[Person](father,mather,son)
+    for {
+      person <- Seq[Person](father, mather, son)
     } person match {
-      case Man("father",age) =>println(s"father is $age")
-      case boy:Boy if boy.age < 10 => println(s"boy is $boy")
-      case Woman(name,29) => println(s"$name is 29")
-      case _ =>println("...")
+      case Man("father", age) => println(s"father is $age")
+      case boy: Boy if boy.age < 10 => println(s"boy is $boy")
+      case Woman(name, 29) => println(s"$name is 29")
+      case _ => println("...")
     }
 
     /** ********************** match case *******************************/
@@ -200,6 +204,36 @@ object HelloWorld {
 
     /** ********************** 函 数 的 定 义 *******************************/
 
+    /** ********************** 并 发 *******************************/
+    val futures = (0 until 10).map {
+      i =>
+        Future {
+          val s = i.toString
+          print(s)
+          s
+        }
+    }
+
+    println()
+
+    val future = Future.reduceLeft(futures)((x, y) => x + y)
+    val result = Await.result(future,Duration.Inf)
+
+    println(future)
+    println(result)
+
+    val futures1 = (1 to 2).map{
+      case 1=> Future.successful("1是奇数")
+      case 2=>Future.failed(new RuntimeException("2不是奇数"))
+    }
+
+    futures1.foreach(_.onComplete{
+      case Success(i) => println(i)
+      case Failure(t) => println(t)
+    })
+
+    Thread.sleep(2000)
+    /** ********************** 并 发 *******************************/
 
   }
 }
